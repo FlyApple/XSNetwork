@@ -52,7 +52,4 @@ Temporary Items
 *.exp
 *.ilk
 *.opensdf
-/Debug
-/Release
-/src/Debug
-/src/Release
+
