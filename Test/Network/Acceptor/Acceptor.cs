@@ -11,17 +11,18 @@ using System.Net.Sockets;
 namespace XSNetwork.Acceptor
 {
     //
-    public class Acceptor : Base.Object
+    public class Acceptor<T> : Base.Object
+        where T : Session.Session
     {
         protected int m_SessionNum;
-        protected Session.SessionPool m_SessionPool;
+        protected Session.SessionPool<T> m_SessionPool;
 
         public Acceptor(Base.Desc desc)
         {
             m_SessionNum = desc.m_AcceptSessionNum;
             m_LocalIPEndPoint = new IPEndPoint(IPAddress.Parse(desc.m_Address), desc.m_Port);
 
-            m_SessionPool = new Session.SessionPool(Session.SessionType.Type_Acceptor, m_SessionNum, this);
+            m_SessionPool = new Session.SessionPool<T>(Session.SessionType.Type_Acceptor, m_SessionNum, this);
         }
 
         //
@@ -73,7 +74,7 @@ namespace XSNetwork.Acceptor
             if (m_SessionPool.IdleCount <= 0)
             { return null; }
 
-            Session.Session session = m_SessionPool.Alloc();
+            Session.Session session = (Session.Session)m_SessionPool.Alloc();
             return session;
         }
 
@@ -84,7 +85,7 @@ namespace XSNetwork.Acceptor
                 if (session.IsInitialize)
                 { session.dispose(); }
 
-                m_SessionPool.Free(session);
+                m_SessionPool.Free((T)session);
                 session = null;
             }
         }

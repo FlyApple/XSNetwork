@@ -7,10 +7,11 @@ using XSNetwork.Pool;
 
 namespace XSNetwork.Session
 {
-    public class SessionPool : AllocBasePool<Session>
+    public class SessionPool<T> : AllocBasePool<T>
+        where T : Session
     {
         public SessionPool(SessionType type, int count, Base.Object token)
-           : base(count, new Creator.SessionCreator(type, token))
+           : base(count, new Creator.SessionCreator<T>(type, token))
         { 
         }
     }

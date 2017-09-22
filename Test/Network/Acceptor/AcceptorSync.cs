@@ -10,7 +10,8 @@ using System.Net.Sockets;
 //
 namespace XSNetwork.Acceptor
 {
-    public class AcceptorSync : Acceptor
+    public class AcceptorSync<T> : Acceptor<T>
+        where T : Session.Session
     {
         protected int m_ThreadNum;
         private bool m_ThreadExitFlag;
@@ -98,13 +99,11 @@ namespace XSNetwork.Acceptor
             {
                 while (!m_ThreadExitFlag)
                 {
-                    if (m_AsyncEventArgs[thread_index].LastOperation != SocketAsyncOperation.None &&
-                        m_AsyncEventArgs[thread_index].AcceptSocket != null)
+                    if (m_AsyncEventArgs[thread_index].AcceptSocket != null)
                     {
                         continue;
                     }
 
-                    m_AsyncEventArgs[thread_index].SocketFlags = SocketFlags.Peek;
                     bool result = m_Socket.AcceptAsync(m_AsyncEventArgs[thread_index]);
                     if (!result)
                     {
@@ -125,6 +124,7 @@ namespace XSNetwork.Acceptor
             {
                 args.AcceptSocket.Close();
                 args.AcceptSocket.Dispose();
+                args.AcceptSocket = null;
                 return;
             }
 
@@ -151,7 +151,7 @@ namespace XSNetwork.Acceptor
                 {
                     if (!this.ProcessAccept(session))
                     {
-                        session.close();
+                        session.close(true);
 
                         this.FreeSession(session);
                     }

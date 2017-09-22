@@ -30,7 +30,7 @@ namespace Test
         private bool m_ThreadMainExitFlag;
         private ManualResetEvent m_ThreadMainEvent;
 
-        private XSNetwork.Acceptor.AcceptorSync m_Acceptor;
+        private XSNetwork.Acceptor.AcceptorSync<TestSession> m_Acceptor;
 
         public Application()
         {
@@ -136,11 +136,55 @@ namespace Test
             desc.m_AcceptSessionNum = 10;
             desc.m_AcceptThreadNum = 2;
 
-            m_Acceptor = new XSNetwork.Acceptor.AcceptorSync(desc);
+            m_Acceptor = new XSNetwork.Acceptor.AcceptorSync<TestSession>(desc);
             if (!m_Acceptor.initialize())
             { return false; }
 
             return true;
+        }
+    }
+
+    class TestSession : XSNetwork.Session.Session
+    {
+        public TestSession(XSNetwork.Session.SessionType type, int index, object token)
+            : base(type, index, token)
+        {
+            this.Event_Init += new XSNetwork.Base.EventSession_InitHandler(OnInit);
+            this.Event_Free += new XSNetwork.Base.EventSession_FreeHandler(OnFree);
+        }
+        
+        public virtual void OnFree(XSNetwork.Session.Session session)
+        {
+        }
+
+        public virtual bool OnInit(XSNetwork.Session.Session session)
+        {
+            return true;
+        }
+
+        protected override bool OnAccept()
+        {
+            if (!base.OnAccept()) { return false; }
+
+            Console.WriteLine("[" + this.Index +"] (Accept) " + this.RemoteAddress + ":" + this.RemotePort);
+
+            this.close(true);
+            return true;
+        }
+        protected override void OnClose(bool passive = false)
+        {
+            Console.WriteLine("[" + this.Index + "] (Close) " + (!passive ? "" : "(passive) ") + this.RemoteAddress + ":" + this.RemotePort);
+        }
+
+        protected override void OnRecv(byte[] buffer, int length)
+        {
+            String temp = "";
+            for (int i = 0; i < length; i++)
+            {
+                if (temp.Length > 0) { temp += ","; }
+                temp += String.Format("{0:X2}", buffer[i]);
+            }
+            Console.WriteLine(temp);
         }
     }
 }

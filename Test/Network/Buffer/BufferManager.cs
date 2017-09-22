@@ -36,6 +36,12 @@ namespace XSNetwork.Buffer
         public int LengthMax { get { return m_BufferData.Length; } }
         public byte[] Buffer { get { return m_BufferData; } }
 
+        public void ClearData()
+        {
+            m_BufferLength = 0;
+            m_BufferOffset = 0;
+        }
+
         public int PushData(byte[] buffer, int length)
         {
             if (length > ElementLength) { return 0; }

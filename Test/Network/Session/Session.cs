@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Threading;
 using System.Net;
 using System.Net.Sockets;
 
@@ -24,11 +25,16 @@ namespace XSNetwork.Session
         protected bool m_IsInitialize;
         public bool IsInitialize { get { return m_IsInitialize; } }
 
-        protected Acceptor.Acceptor m_Acceptor;
+        protected Base.Object m_Acceptor;
+
+        protected Buffer.BufferManager m_SendBuffer;
         protected Buffer.BufferManager m_RecvBuffer;
 
-        private SocketAsyncEventArgs[]    m_AsyncEvents;
+        private SocketAsyncEventArgs[]      m_AsyncEvents;
+        private ManualResetEvent            m_AsyncBlockCloseEvent;
 
+        public Base.EventSession_InitHandler Event_Init;
+        public Base.EventSession_FreeHandler Event_Free;
         public Base.EventSession_AcceptHandler Event_Accept;
         public Base.EventSession_CloseHandler Event_Close;
         public Base.EventSession_RecvHandler Event_Recv;
@@ -36,10 +42,11 @@ namespace XSNetwork.Session
         public Session(SessionType type, int index, object token)
         {
             m_Index = index;
-            m_Acceptor = type == SessionType.Type_Acceptor ? (Acceptor.Acceptor)token : null;
+            m_Acceptor = type == SessionType.Type_Acceptor ? (Base.Object)token : null;
 
             m_IsInitialize = false;
 
+            m_SendBuffer = new Buffer.BufferManager(8192);
             m_RecvBuffer = new Buffer.BufferManager(8192);
 
             m_AsyncEvents = new SocketAsyncEventArgs[(int)Base.ASYNC_TYPE.ASYNC_MAX];
@@ -55,11 +62,21 @@ namespace XSNetwork.Session
             m_AsyncEvents[(int)Base.ASYNC_TYPE.ASYNC_RECV].Completed += new EventHandler<SocketAsyncEventArgs>(Event_AsyncIOCompleted);
             m_AsyncEvents[(int)Base.ASYNC_TYPE.ASYNC_RECV].UserToken = this;
 
+            m_AsyncBlockCloseEvent = new ManualResetEvent(false);
         }
 
         public override void dispose()
         {
             base.dispose();
+
+            m_AsyncEvents[(int)Base.ASYNC_TYPE.ASYNC_SEND].SetBuffer(0, Buffer.BufferManager.ElementLength);
+            m_AsyncEvents[(int)Base.ASYNC_TYPE.ASYNC_RECV].SetBuffer(0, Buffer.BufferManager.ElementLength);
+
+            m_SendBuffer.ClearData();
+            m_RecvBuffer.ClearData();
+
+            if (Event_Free != null)
+            { Event_Free(this); }
 
             m_IsInitialize = false;
         }
@@ -73,16 +90,35 @@ namespace XSNetwork.Session
             m_LocalIPEndPoint = local;
             m_RemoteIPEndPoint = remote;
 
+            if (Event_Init != null && !Event_Init(this))
+            { return false; }
+            
+            //
+            m_AsyncBlockCloseEvent.Reset();
+
+            //
             m_IsInitialize = true;
             return true;
         }
 
-        public override void close()
+        public virtual void close(bool block = false)
         {
             //不调用父类关闭句柄
             //采用异步关闭
             if (!m_Socket.DisconnectAsync(m_AsyncEvents[(int)Base.ASYNC_TYPE.ASYNC_CLOSE]))
             { Event_AsyncIOCompleted(m_Socket, m_AsyncEvents[(int)Base.ASYNC_TYPE.ASYNC_CLOSE]); }
+
+            //默认不需要阻塞,但是在清除回收的时候,需要阻塞
+            if (block)
+            { m_AsyncBlockCloseEvent.WaitOne(500); }
+        }
+
+        public virtual int send(byte[] data, int offset, int length)
+        {
+            if (data.Length + offset < length) { return -1; }
+
+
+            return 0;
         }
 
         private void Event_AsyncIOCompleted(object sender, SocketAsyncEventArgs args)
@@ -157,6 +193,9 @@ namespace XSNetwork.Session
 
             //调用父类关闭句柄
             base.close();
+
+            //
+            m_AsyncBlockCloseEvent.Set();
             return true;
         }
 
@@ -197,24 +236,8 @@ namespace XSNetwork.Session
             return length < 0 ? -1 : parse_length;
         }
 
-        protected virtual bool OnAccept() 
-        {
-            Console.WriteLine("(Accept) " + this.RemoteAddress + ":" + this.RemotePort);
-            return true; 
-        }
-        protected virtual void OnClose(bool passive = false) 
-        {
-            Console.WriteLine("(Close) " + this.RemoteAddress + ":" + this.RemotePort); 
-        }
-        protected virtual void OnRecv(byte[] buffer, int length) 
-        {
-            String temp = "";
-            for (int i = 0; i < length; i++)
-            {
-                if (temp.Length > 0) { temp += ","; }
-                temp += String.Format("{0:X2}", buffer[i]);
-            }
-            Console.WriteLine(temp);
-        }
+        protected virtual bool OnAccept() { return true; }
+        protected virtual void OnClose(bool passive = false) { }
+        protected virtual void OnRecv(byte[] buffer, int length) { }
     }
 }
