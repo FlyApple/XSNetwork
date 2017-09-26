@@ -73,8 +73,11 @@ namespace XSNetwork.Pool
 
         public void Free(T value)
         {
-            m_IdleList.Push(value);
-            Interlocked.Increment(ref m_IdleCount);
+            if (!m_IdleList.Contains<T>(value))
+            { 
+                m_IdleList.Push(value);
+                Interlocked.Increment(ref m_IdleCount);
+            }  
         }
     }
 }

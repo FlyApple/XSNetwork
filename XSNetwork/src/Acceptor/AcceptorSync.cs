@@ -140,7 +140,7 @@ namespace XSNetwork.Acceptor
             {
                 if (!session.initialize(args.AcceptSocket, (IPEndPoint)m_Socket.LocalEndPoint, (IPEndPoint)args.AcceptSocket.RemoteEndPoint))
                 {
-                    this.FreeSession(session);
+                    this.FreeSession((T)session);
 
                     args.AcceptSocket.Close();
                     args.AcceptSocket.Dispose();
@@ -153,7 +153,7 @@ namespace XSNetwork.Acceptor
                     {
                         session.close(true);
 
-                        this.FreeSession(session);
+                        this.FreeSession((T)session);
                     }
                 }
             }

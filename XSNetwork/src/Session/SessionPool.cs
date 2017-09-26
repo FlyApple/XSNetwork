@@ -10,8 +10,8 @@ namespace XSNetwork.Session
     public class SessionPool<T> : AllocBasePool<T>
         where T : Session
     {
-        public SessionPool(SessionType type, int count, Base.Object token)
-           : base(count, new Creator.SessionCreator<T>(type, token))
+        public SessionPool(int count, Base.Object token)
+           : base(count, new Creator.SessionCreator<T>(token))
         { 
         }
     }

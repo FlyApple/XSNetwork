@@ -1,0 +1,7 @@
+E:\XSNetwork\build\lib\XSNetwork.dll
+E:\XSNetwork\build\lib\XSNetwork.pdb
+E:\XSNetwork\XSNetwork\obj\Debug\XSNetwork.dll
+E:\XSNetwork\XSNetwork\obj\Debug\XSNetwork.pdb
+E:\XSNetwork\build\bin\XSNetwork.dll
+E:\XSNetwork\build\bin\XSNetwork.pdb
+E:\XSNetwork\XSNetwork\obj\Debug\XSNetwork.csprojResolveAssemblyReference.cache

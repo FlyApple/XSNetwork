@@ -146,13 +146,26 @@ namespace Test
 
     class TestSession : XSNetwork.Session.Session
     {
-        public TestSession(XSNetwork.Session.SessionType type, int index, object token)
-            : base(type, index, token)
+        public TestSession(int index, object token)
+            : base(index, token)
         {
             this.Event_Init += new XSNetwork.Base.EventSession_InitHandler(OnInit);
             this.Event_Free += new XSNetwork.Base.EventSession_FreeHandler(OnFree);
+
+            this.Event_ErrorHandler += new XSNetwork.Base.EventErrorHandler(OnError);
+            this.Event_LogoutHandler += new XSNetwork.Base.EventLogoutHandler(OnLogout);
         }
         
+        protected virtual void OnLogout(string text)
+        {
+            Console.WriteLine(text);
+        }
+
+        protected virtual void OnError(int code, string text)
+        {
+            Console.WriteLine("[Error] (code:" + code + "): " + text);
+        }
+
         public virtual void OnFree(XSNetwork.Session.Session session)
         {
         }
@@ -167,8 +180,6 @@ namespace Test
             if (!base.OnAccept()) { return false; }
 
             Console.WriteLine("[" + this.Index +"] (Accept) " + this.RemoteAddress + ":" + this.RemotePort);
-
-            this.close(true);
             return true;
         }
         protected override void OnClose(bool passive = false)
@@ -185,6 +196,9 @@ namespace Test
                 temp += String.Format("{0:X2}", buffer[i]);
             }
             Console.WriteLine(temp);
+
+            byte[] data = { 0x05, 0x00, 0x01, 0x00, 0x00 };
+            this.send(data);
         }
     }
 }

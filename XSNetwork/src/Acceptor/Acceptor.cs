@@ -11,33 +11,22 @@ using System.Net.Sockets;
 namespace XSNetwork.Acceptor
 {
     //
-    public class Acceptor<T> : Base.Object
+    public class Acceptor<T> : Base.ReplyT<T>
         where T : Session.Session
     {
-        protected int m_SessionNum;
-        protected Session.SessionPool<T> m_SessionPool;
-
         public Acceptor(Base.Desc desc)
+            : base(desc, Base.OBJECT_TYPE.TYPE_Acceptor)
         {
-            m_SessionNum = desc.m_AcceptSessionNum;
             m_LocalIPEndPoint = new IPEndPoint(IPAddress.Parse(desc.m_Address), desc.m_Port);
-
-            m_SessionPool = new Session.SessionPool<T>(Session.SessionType.Type_Acceptor, m_SessionNum, this);
         }
 
         //
         public override void dispose()
         {
-            if (m_SessionPool != null)
-            {
-                m_SessionPool.dispose();
-                m_SessionPool = null;
-            }
-
             base.dispose();
         }
 
-        // 这将初始化并创建线程
+        // 这将初始化
         public override bool initialize()
         {
             if (!base.initialize())
@@ -67,27 +56,6 @@ namespace XSNetwork.Acceptor
                 Error(e.HResult, "[Exception] : " + e.Message);
             }
             return true;
-        }
-
-        protected virtual Session.Session AllocSession()
-        {
-            if (m_SessionPool.IdleCount <= 0)
-            { return null; }
-
-            Session.Session session = (Session.Session)m_SessionPool.Alloc();
-            return session;
-        }
-
-        protected virtual void FreeSession(Session.Session session)
-        {
-            if (session != null)
-            {
-                if (session.IsInitialize)
-                { session.dispose(); }
-
-                m_SessionPool.Free((T)session);
-                session = null;
-            }
         }
     }
 }

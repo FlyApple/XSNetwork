@@ -6,12 +6,12 @@ using System.Threading.Tasks;
 
 namespace XSNetwork.Base
 {
-    public class Logger
+    public class BaseLogEvent
     {
         public EventLogoutHandler Event_LogoutHandler;
         public EventErrorHandler Event_ErrorHandler;
 
-        public Logger()
+        public BaseLogEvent()
         {
             Event_LogoutHandler = null;
             Event_ErrorHandler = null;

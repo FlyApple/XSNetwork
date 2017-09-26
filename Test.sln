@@ -2,6 +2,11 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test", "Test\Test.csproj", "{10FD0F32-898D-4F23-BC8B-0764B4A88335}"
+	ProjectSection(ProjectDependencies) = postProject
+		{1B133A99-D07E-472F-AEDF-17EBAAE6FB91} = {1B133A99-D07E-472F-AEDF-17EBAAE6FB91}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XSNetwork", "XSNetwork\XSNetwork.csproj", "{1B133A99-D07E-472F-AEDF-17EBAAE6FB91}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -13,6 +18,10 @@ Global
 		{10FD0F32-898D-4F23-BC8B-0764B4A88335}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{10FD0F32-898D-4F23-BC8B-0764B4A88335}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{10FD0F32-898D-4F23-BC8B-0764B4A88335}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1B133A99-D07E-472F-AEDF-17EBAAE6FB91}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1B133A99-D07E-472F-AEDF-17EBAAE6FB91}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1B133A99-D07E-472F-AEDF-17EBAAE6FB91}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1B133A99-D07E-472F-AEDF-17EBAAE6FB91}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

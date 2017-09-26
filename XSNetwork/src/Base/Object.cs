@@ -9,7 +9,16 @@ using XSNetwork.Interface;
 
 namespace XSNetwork.Base
 {
-    enum ASYNC_TYPE
+    public enum OBJECT_TYPE
+    {
+        TYPE_None,
+        TYPE_Acceptor,
+        TYPE_Connector,
+        TYPE_Session,
+        TYPE_Max
+    }
+
+    public enum ASYNC_TYPE
     {
         ASYNC_ACCEPT    = 0,
         ASYNC_CONNECT,
@@ -19,8 +28,11 @@ namespace XSNetwork.Base
         ASYNC_MAX
     };
 
-    public class Object : Logger, IObject
+    public class Object : BaseLogEvent, IObject
     {
+        protected OBJECT_TYPE m_Type;
+        public OBJECT_TYPE ObjectType { get { return m_Type; } }
+
         protected Socket m_Socket;
         protected IPEndPoint m_LocalIPEndPoint;
         protected IPEndPoint m_RemoteIPEndPoint;
@@ -34,12 +46,14 @@ namespace XSNetwork.Base
         public IPEndPoint RemoteIPEndPoint { get { return m_RemoteIPEndPoint; } }
 
         protected bool m_IsListening;
-        public bool IsListening { get { return m_IsListening; } }
+        public bool IsListening { get { return this.ObjectType == OBJECT_TYPE.TYPE_Acceptor && m_IsListening; } }
         protected bool m_IsConnecting;
-        public bool IsConnecting { get { return m_IsConnecting; } }
+        public bool IsConnecting { get { return this.ObjectType == OBJECT_TYPE.TYPE_Session && m_IsConnecting; } }
 
-        public Object()
+        public Object(OBJECT_TYPE type = OBJECT_TYPE.TYPE_None)
         {
+            m_Type = type;
+
             m_IsListening = false;
             m_IsConnecting = false;
         }
@@ -69,6 +83,7 @@ namespace XSNetwork.Base
         {
             if (this.IsConnecting || this.IsListening)
             {
+                //m_Socket.Shutdown(SocketShutdown.Both);
                 m_Socket.Close();
 
                 m_IsListening = false;
