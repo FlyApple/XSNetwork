@@ -100,7 +100,7 @@ namespace XSNetwork.Session
             
             //
             m_AsyncMessageBlockClose.Reset();
-            m_IOAsyncSendCount++;
+            m_IOAsyncSendCount = 0;
 
             //
             m_IsInitialize = true;
@@ -134,18 +134,33 @@ namespace XSNetwork.Session
 
             lock (this)
             {
+                byte[] buffer = new byte[Buffer.BufferManager.ElementLength];
+                Array.Copy(data, offset, buffer, 0, length);
+
                 if (m_IOAsyncSendCount == 0 &&
                     m_AsyncEvents[(int)Base.ASYNC_TYPE.ASYNC_SEND].Offset + length < Buffer.BufferManager.ElementLength)
                 {
-                    Array.Copy(m_AsyncEvents[(int)Base.ASYNC_TYPE.ASYNC_SEND].Buffer,
-                        m_AsyncEvents[(int)Base.ASYNC_TYPE.ASYNC_SEND].Offset, data, offset, length);
+                    this.OnSend(buffer, length);
+
+                    Array.Copy(buffer, 0,
+                        m_AsyncEvents[(int)Base.ASYNC_TYPE.ASYNC_SEND].Buffer,
+                        m_AsyncEvents[(int)Base.ASYNC_TYPE.ASYNC_SEND].Offset, 
+                        length);
+                    m_AsyncEvents[(int)Base.ASYNC_TYPE.ASYNC_SEND].SetBuffer(m_AsyncEvents[(int)Base.ASYNC_TYPE.ASYNC_SEND].Offset, length);
+
+                    if (!this.ProcessSend(m_AsyncEvents[(int)Base.ASYNC_TYPE.ASYNC_SEND]))
+                    {
+                        return -1;
+                    }
                 }
                 else
                 {
-                    m_SendBuffer.PushData(data, offset, length);
+                    m_SendBuffer.PushData(buffer, 0, length);
                 }
+
+                Interlocked.Increment(ref m_IOAsyncSendCount);
             }
-            return 0;
+            return length;
         }
 
         private void Event_AsyncIOCompleted(object sender, SocketAsyncEventArgs args)
@@ -155,6 +170,50 @@ namespace XSNetwork.Session
                 case SocketAsyncOperation.Disconnect:
                     {
                         this.ProcessClose(false);
+                        break;
+                    }
+                case SocketAsyncOperation.Send:
+                    {
+                        lock (this)
+                        {
+                            if (m_IOAsyncSendCount > 0)
+                            {
+                                Interlocked.Decrement(ref m_IOAsyncSendCount);
+
+                                byte[] buffer = new byte[Buffer.BufferManager.ElementLength];
+                                int length = m_SendBuffer.GetData(0, buffer, 0);
+                                if (length < 0)
+                                {
+                                    Error(-1, "[Error] : Send buffer (length:"+ length +") error, Closing session.");
+
+                                    this.close();
+                                }
+                                else if (length == 0)
+                                {
+                                    //nothing
+                                }
+                                else
+                                {
+                                    if (m_AsyncEvents[(int)Base.ASYNC_TYPE.ASYNC_SEND].Offset + length < Buffer.BufferManager.ElementLength)
+                                    {
+                                        this.OnSend(buffer, length);
+
+                                        Array.Copy(buffer, 0,
+                                            m_AsyncEvents[(int)Base.ASYNC_TYPE.ASYNC_SEND].Buffer,
+                                            m_AsyncEvents[(int)Base.ASYNC_TYPE.ASYNC_SEND].Offset,
+                                            length);
+                                        m_AsyncEvents[(int)Base.ASYNC_TYPE.ASYNC_SEND].SetBuffer(m_AsyncEvents[(int)Base.ASYNC_TYPE.ASYNC_SEND].Offset, length);
+                                    }
+
+                                    if (!this.ProcessSend(args))
+                                    {
+                                        Error(-1, "[Error] : Start process send error, Closing session.");
+
+                                        this.close();
+                                    }
+                                }
+                            }
+                        }
                         break;
                     }
                 case SocketAsyncOperation.Receive:
@@ -233,6 +292,24 @@ namespace XSNetwork.Session
             return true;
         }
 
+        public virtual bool ProcessSend(SocketAsyncEventArgs args)
+        {
+            try
+            {
+                if (!IsConnecting) { return false; }
+
+                //
+                if (!m_Socket.SendAsync(args))
+                { Event_AsyncIOCompleted(this.m_Socket, args); }
+            }
+            catch (Exception e)
+            {
+                Error(-1, "[Exception] : " + e.Message);
+                return false;
+            }
+            return true;
+        }
+
         public virtual bool ProcessReceive(SocketAsyncEventArgs args)
         {
             try
@@ -275,5 +352,6 @@ namespace XSNetwork.Session
         protected virtual bool OnAccept() { return true; }
         protected virtual void OnClose(bool passive = false) { }
         protected virtual void OnRecv(byte[] buffer, int length) { }
+        protected virtual void OnSend(byte[] buffer, int length) { }
     }
 }

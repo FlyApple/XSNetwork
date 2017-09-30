@@ -44,19 +44,25 @@ namespace XSNetwork.Buffer
 
         public int PushData(byte[] buffer, int length)
         {
+            return this.PushData(buffer, 0, length);
+        }
+
+        public int PushData(byte[] buffer, int offset, int length)
+        {
             if (length > ElementLength) { return 0; }
-            if (m_BufferLength + length > m_BufferData.Length)
+            if (m_BufferOffset + m_BufferLength + length > m_BufferData.Length &&
+                m_BufferOffset < length)
             { return 0; }
 
             if (m_BufferOffset + m_BufferLength + length <= m_BufferData.Length)
-            { Array.Copy(buffer, 0, m_BufferData, m_BufferOffset + m_BufferLength, length); }
+            { Array.Copy(buffer, offset, m_BufferData, m_BufferOffset + m_BufferLength, length); }
             else if (m_BufferOffset >= length)
             {
                 Array.Copy(m_BufferData, m_BufferOffset, m_BufferData, 0, m_BufferLength);
         
                 m_BufferOffset = 0;
 
-                Array.Copy(buffer, 0, m_BufferData, m_BufferOffset + m_BufferLength, length);
+                Array.Copy(buffer, offset, m_BufferData, m_BufferOffset + m_BufferLength, length);
             }
             else
             {

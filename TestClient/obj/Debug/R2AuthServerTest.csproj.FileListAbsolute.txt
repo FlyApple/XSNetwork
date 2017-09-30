@@ -1,0 +1,6 @@
+E:\R2Hello\R2AuthServer\R2AuthServerTest\bin\Debug\R2AuthServerTest.exe.config
+E:\R2Hello\R2AuthServer\R2AuthServerTest\bin\Debug\R2AuthServerTest.exe
+E:\R2Hello\R2AuthServer\R2AuthServerTest\bin\Debug\R2AuthServerTest.pdb
+E:\R2Hello\R2AuthServer\R2AuthServerTest\obj\Debug\R2AuthServerTest.csprojResolveAssemblyReference.cache
+E:\R2Hello\R2AuthServer\R2AuthServerTest\obj\Debug\R2AuthServerTest.exe
+E:\R2Hello\R2AuthServer\R2AuthServerTest\obj\Debug\R2AuthServerTest.pdb

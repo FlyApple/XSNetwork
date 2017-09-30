@@ -1,0 +1,5 @@
+E:\XSNetwork\build\bin\TestClient.exe.config
+E:\XSNetwork\build\bin\TestClient.exe
+E:\XSNetwork\build\bin\TestClient.pdb
+E:\XSNetwork\TestClient\obj\Debug\TestClient.exe
+E:\XSNetwork\TestClient\obj\Debug\TestClient.pdb
