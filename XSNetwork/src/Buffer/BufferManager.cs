@@ -14,6 +14,8 @@ namespace XSNetwork.Buffer
         private static int m_ElementLength = 2048;
         public static int ElementLength { get { return m_ElementLength; } }
 
+        public static Base.EventParsePacketHeader Event_ParsePacketHeader;
+
         private int m_BufferLength;
         private int m_BufferOffset;
         private byte[] m_BufferData;
@@ -94,6 +96,11 @@ namespace XSNetwork.Buffer
             int packet_header2 = BitConverter.ToUInt16(m_BufferData, m_BufferOffset + src_index + 2);
 
             int length = packet_header1;
+            if (Event_ParsePacketHeader != null)
+            {
+                length = Event_ParsePacketHeader(this, m_BufferData, m_BufferOffset + src_index);
+            }
+
             if (length > 2048 || length < 4) { return -1; }
             if (length > m_BufferLength) { return 0; }
 

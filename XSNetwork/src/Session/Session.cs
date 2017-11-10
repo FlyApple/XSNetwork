@@ -16,17 +16,13 @@ namespace XSNetwork.Session
         private int m_Index;
         public int Index { get { return m_Index; } }
 
-        protected bool m_IsInitialize;
-        public bool IsInitialize { get { return m_IsInitialize; } }
-
-        protected Interface.ISessionAlloc m_ReplyPtr;
+        protected object m_Token;
 
         protected Buffer.BufferManager m_SendBuffer;
         protected Buffer.BufferManager m_RecvBuffer;
 
         private SocketAsyncEventArgs[]      m_AsyncEvents;
 
-        private Base.AsyncMessage m_AsyncMessageBlockClose;
         private int m_IOAsyncSendCount;
 
         public Base.EventSession_InitHandler Event_Init;
@@ -34,16 +30,13 @@ namespace XSNetwork.Session
         public Base.EventSession_AcceptHandler Event_Accept;
         public Base.EventSession_CloseHandler Event_Close;
         public Base.EventSession_RecvHandler Event_Recv;
+        public Base.FreeSessionMethodCaller FreeSessionCaller;
 
         public Session(int index, object token)
             : base(Base.OBJECT_TYPE.TYPE_Session)
         {
             m_Index = index;
-
-            //内存对齐导致莫名异常
-            m_ReplyPtr = (Interface.ISessionAlloc)token;
-
-            m_IsInitialize = false;
+            m_Token = token;
 
             m_SendBuffer = new Buffer.BufferManager(8192);
             m_RecvBuffer = new Buffer.BufferManager(8192);
@@ -60,8 +53,6 @@ namespace XSNetwork.Session
             m_AsyncEvents[(int)Base.ASYNC_TYPE.ASYNC_RECV].SetBuffer(new byte[Buffer.BufferManager.ElementLength], 0, Buffer.BufferManager.ElementLength);
             m_AsyncEvents[(int)Base.ASYNC_TYPE.ASYNC_RECV].Completed += new EventHandler<SocketAsyncEventArgs>(Event_AsyncIOCompleted);
             m_AsyncEvents[(int)Base.ASYNC_TYPE.ASYNC_RECV].UserToken = this;
-
-            m_AsyncMessageBlockClose = new Base.AsyncMessage();
         }
 
         public override void dispose()
@@ -76,14 +67,6 @@ namespace XSNetwork.Session
 
             if (Event_Free != null)
             { Event_Free(this); }
-
-            //if (m_AsyncMessageBlockClose != null)
-            //{
-            //    m_AsyncMessageBlockClose.dispose();
-            //    m_AsyncMessageBlockClose = null;
-            //}
-
-            m_IsInitialize = false;
         }
 
         public virtual bool initialize(Socket socket, IPEndPoint local, IPEndPoint remote)
@@ -91,34 +74,50 @@ namespace XSNetwork.Session
             if (!base.initialize())
             { return false; }
 
+            this.ObjectStatus = Base.OBJECT_STATUS.STATUS_StartUse;
+
             m_Socket = socket;
             m_LocalIPEndPoint = local;
             m_RemoteIPEndPoint = remote;
-
-            if (Event_Init != null && !Event_Init(this))
-            { return false; }
             
             //
-            m_AsyncMessageBlockClose.Reset();
             m_IOAsyncSendCount = 0;
 
             //
-            m_IsInitialize = true;
+            if (Event_Init != null && !Event_Init(this))
+            { return false; }
+
+            //
             return true;
         }
 
         public virtual void close(bool block = false)
         {
-            if (!IsConnecting) { return ; }
+            if (this.ObjectStatus == Base.OBJECT_STATUS.STATUS_Closing)
+            { return; }
 
-            //不调用父类关闭句柄
-            //采用异步关闭
-            if (!m_Socket.DisconnectAsync(m_AsyncEvents[(int)Base.ASYNC_TYPE.ASYNC_CLOSE]))
-            { Event_AsyncIOCompleted(m_Socket, m_AsyncEvents[(int)Base.ASYNC_TYPE.ASYNC_CLOSE]); }
+            try
+            {
+                this.ObjectStatus = Base.OBJECT_STATUS.STATUS_Closing;
 
-            //默认不需要阻塞,但是在清除回收的时候,需要阻塞
-            if (block)
-            { m_AsyncMessageBlockClose.ActiveAndWait(500); }
+                //不调用父类关闭句柄
+                //采用异步关闭
+                if (!m_Socket.DisconnectAsync(m_AsyncEvents[(int)Base.ASYNC_TYPE.ASYNC_CLOSE]))
+                { Event_AsyncIOCompleted(m_Socket, m_AsyncEvents[(int)Base.ASYNC_TYPE.ASYNC_CLOSE]); }
+
+                //默认不需要阻塞,但是在清除回收的时候,需要阻塞
+                if (block)
+                {
+                    int timeout = System.Environment.TickCount;
+                    while (timeout + 500 < System.Environment.TickCount &&
+                        this.ObjectStatus == Base.OBJECT_STATUS.STATUS_Closing)
+                    { Thread.Sleep(20); }
+                }
+            }
+            catch (Exception e)
+            {
+                Error(e.HResult, "[close] Exception : " + e.Message);
+            }
         }
 
         public virtual int send(byte[] data)
@@ -255,7 +254,7 @@ namespace XSNetwork.Session
 
         public virtual bool ProcessAccept()
         {
-            m_IsConnecting = true;
+            this.ObjectStatus = Base.OBJECT_STATUS.STATUS_Using;
 
             if (!this.OnAccept())
             { return false;  }
@@ -283,12 +282,8 @@ namespace XSNetwork.Session
             base.close();
 
             //
-            if (m_AsyncMessageBlockClose.IsActive)
-            { m_AsyncMessageBlockClose.ResponseMessage(); }
-            
-
-            //
-            m_ReplyPtr.FreeSession(this);
+            if (FreeSessionCaller != null)
+            { FreeSessionCaller(this); }
             return true;
         }
 
@@ -296,7 +291,11 @@ namespace XSNetwork.Session
         {
             try
             {
-                if (!IsConnecting) { return false; }
+                if (this.ObjectStatus != Base.OBJECT_STATUS.STATUS_Using)
+                { return false; }
+
+                //
+                Logout("[ProcessSend] : buffer size = " + args.Count);
 
                 //
                 if (!m_Socket.SendAsync(args))
@@ -314,7 +313,8 @@ namespace XSNetwork.Session
         {
             try
             {
-                if (!IsConnecting) { return false; }
+                if (this.ObjectStatus != Base.OBJECT_STATUS.STATUS_Using)
+                { return false; }
 
                 //
                 if (!m_Socket.ReceiveAsync(args))

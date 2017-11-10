@@ -138,6 +138,12 @@ namespace XSNetwork.Acceptor
             }
             else
             {
+                if (session.FreeSessionCaller == null ||
+                    !session.FreeSessionCaller.Equals(new Base.FreeSessionMethodCaller(FreeSessionCaller)))
+                {
+                    session.FreeSessionCaller += new Base.FreeSessionMethodCaller(FreeSessionCaller);
+                }
+
                 if (!session.initialize(args.AcceptSocket, (IPEndPoint)m_Socket.LocalEndPoint, (IPEndPoint)args.AcceptSocket.RemoteEndPoint))
                 {
                     this.FreeSession((T)session);
@@ -161,6 +167,11 @@ namespace XSNetwork.Acceptor
             //C# 存在隐藏的指针,Are you kidding me?
             //如果定义成数组,这里是指针哦!
             args.AcceptSocket = null;
+        }
+
+        public void FreeSessionCaller(object caller)
+        {
+            this.FreeSession((Session.Session)caller);
         }
 
         protected virtual bool ProcessAccept(Session.Session session)

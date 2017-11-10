@@ -19,9 +19,11 @@ namespace XSNetwork.Pool
         private int m_IdleCount;
         public int IdleCount { get { return m_IdleCount; } }
 
-        private IPoolCreator<T>     m_PoolCreator;
-        private List<T>             m_AllocList;
-        private ConcurrentStack<T>  m_IdleList;
+        private IPoolCreator<T> m_PoolCreator;
+        private List<T> m_AllocList;
+        private List<T> m_IdleList;
+        //private ConcurrentStack<T>  m_IdleList;
+
 
         public AllocBasePool(int count, IPoolCreator<T> creator)
         {
@@ -34,7 +36,9 @@ namespace XSNetwork.Pool
             {
                 m_AllocList.Add(v);
             }
-            m_IdleList = new ConcurrentStack<T>(m_AllocList);
+
+            //m_IdleList = new ConcurrentStack<T>(m_AllocList);
+            m_IdleList = new List<T>(m_AllocList);
         }
 
         public virtual void dispose()
@@ -63,21 +67,25 @@ namespace XSNetwork.Pool
             T value = default(T);
             if (m_IdleList.Count > 0)
             {
-                if (m_IdleList.TryPop(out value))
+                //if (m_IdleList.TryPop(out value))
+                value = m_IdleList.First<T>();
+                m_IdleList.RemoveAt(0);
                 {
                     Interlocked.Decrement(ref m_IdleCount);
                 }
-            }    
+            }
             return value;
         }
 
         public void Free(T value)
         {
             if (!m_IdleList.Contains<T>(value))
-            { 
-                m_IdleList.Push(value);
+            {
+                //m_IdleList.Push(value);
+                m_IdleList.Add(value);
+
                 Interlocked.Increment(ref m_IdleCount);
-            }  
+            }
         }
     }
 }

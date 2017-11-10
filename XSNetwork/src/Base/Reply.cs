@@ -53,7 +53,7 @@ namespace XSNetwork.Base
         {
             if (session != null)
             {
-                if (session.IsInitialize)
+                if (session.IsUsing)
                 { session.dispose(); }
 
                 m_SessionPool.Free((T)session);

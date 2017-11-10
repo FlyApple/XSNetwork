@@ -35,6 +35,8 @@ namespace XSNetwork.Acceptor
             if (!CreateListen())
             { return false; }
 
+            m_Status = Base.OBJECT_STATUS.STATUS_Listening;
+
             //
             return true;
         }
@@ -43,11 +45,11 @@ namespace XSNetwork.Acceptor
         {
             try
             {
+                m_Status = Base.OBJECT_STATUS.STATUS_StartListen;
+
                 m_Socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
                 m_Socket.Bind(m_LocalIPEndPoint); m_LocalIPEndPoint = (IPEndPoint)m_Socket.LocalEndPoint;
                 m_Socket.Listen(5);
-
-                m_IsListening = true;
 
                 Logout("[Acceptor] (listen) : " + this.LocalAddress + ":" + this.LocalPort);
             }
