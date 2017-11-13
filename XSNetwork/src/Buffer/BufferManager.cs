@@ -90,7 +90,7 @@ namespace XSNetwork.Buffer
         {
             if (dst_data == null) { return -1; }
             
-            if (m_BufferOffset + src_index + 4 > m_BufferLength) { return 0; }
+            if (src_index + 4 > m_BufferLength) { return 0; }
 
             int packet_header1 = BitConverter.ToUInt16(m_BufferData, m_BufferOffset + src_index);
             int packet_header2 = BitConverter.ToUInt16(m_BufferData, m_BufferOffset + src_index + 2);
