@@ -1,5 +1,11 @@
-E:\XSNetwork\build\bin\TestClient.exe.config
-E:\XSNetwork\build\bin\TestClient.exe
-E:\XSNetwork\build\bin\TestClient.pdb
-E:\XSNetwork\TestClient\obj\Debug\TestClient.exe
-E:\XSNetwork\TestClient\obj\Debug\TestClient.pdb
+E:/XSNetwork/build/bin/TestClient.exe.config
+E:/XSNetwork/build/bin/TestClient.exe
+E:/XSNetwork/build/bin/TestClient.pdb
+E:/XSNetwork/TestClient/obj/Debug/TestClient.exe
+E:/XSNetwork/TestClient/obj/Debug/TestClient.pdb
+/Users/silly/Private/XSNetwork/build/bin/TestClient.exe.config
+/Users/silly/Private/XSNetwork/build/bin/TestClient.exe
+/Users/silly/Private/XSNetwork/build/bin/TestClient.pdb
+/Users/silly/Private/XSNetwork/TestClient/obj/Debug/TestClient.csproj.CoreCompileInputs.cache
+/Users/silly/Private/XSNetwork/TestClient/obj/Debug/TestClient.exe
+/Users/silly/Private/XSNetwork/TestClient/obj/Debug/TestClient.pdb
